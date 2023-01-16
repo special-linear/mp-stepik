@@ -1,0 +1,32 @@
+<p>Для решения дальнейших задач не обязательно, но очень полезно иметь быстрый доступ к элементам матрицы. Например, если матричные элементы матрицы <code>mat</code> хранятся в поле <code>entries</code>, которое, скажем, является списком списков, то для доступа к элементу в позиции <code>i,j</code> надо писать что-то вроде <code>mat.entries[i][j]</code>, что несколько утомительно и снижает читаемость кода. Хотелось бы иметь возможность писать человеческим языком, то есть просто <code>mat[i, j]</code>. В Python это возможно посредством «магического метода» <code>__getitem__</code>:</p>
+
+<pre><code class="language-python">def __getitem__(self, item):
+    i, j = item
+    return self.entries[i][j]</code></pre>
+
+<p>Здесь предполагаеся, что <code>item</code> это что-то итерируемое длины &gt;1, иначе распаковки не выйдет.</p>
+
+<p>Однако для строк и столбцов все еще не очень приятно каждый раз писать <code>row[0, j]</code> и <code>col[i, 0]</code> — мы бы предпочли просто <code>row[j]</code> и <code>col[i]</code>. Ну, почему бы и нет:</p>
+
+<pre><code class="language-python">def __getitem__(self, item):
+    if isinstance(item, int):
+        # если строка, то
+            return self.entries[0][item]
+        # если столбец, то
+            return self.entries[item][0]
+    elif isinstance(item, tuple):
+        i, j = item
+        return self.entries[i][j]</code></pre>
+
+<p>Теперь можно и так и эдак! Тут, конечно, опущены всякие проверки вроде того, что <code>item</code> типа <code>tuple</code> состоит из пары целых чисел, и никак не обрабатывается случай, когда в качестве индекса подается что-то другое (реализация выше вернет <code>None</code>).</p>
+
+<p>Раз уж мы можем различать разные типы индексов, то можно пойти дальше и добавить поддержку слайсов. А именно, для списка <code>a</code> вызов <code>a[start:stop:step]</code> возвращает список элементов, стоящих на позициях от <code>start</code> (включительно) до <code>stop</code> (не включительно) с шагом <code>step</code>. Внутри там происходит вызов <code>a[slice(start, stop, step)]</code>, он же <code>a.__getitem__(slice(start, stop, step))</code>. Так что можно добавить поддержку типа <code>slice</code> в качестве возможного значения параметра <code>item</code>, чтобы можно было писать, например, следующие вещи:</p>
+
+<ul>
+	<li><code>mat[0, :]</code> для первой строки матрицы mat,</li>
+	<li><code>mat[:, -1]</code> для последнего столбца,</li>
+	<li><code>mat[:, :-1]</code> для матрицы за исключением последнего столбца,</li>
+	<li><code>mat[:2,:2]</code> и <code>mat[-2:,-2:]</code> для 2х2 подматриц в левом верхнем и правом нижнем углах.</li>
+</ul>
+
+<p>Кто-нибудь добавит, что всю эту машинерию можно организовать посредством <a href="https://docs.python.org/3/library/functools.html#functools.singledispatch" rel="noopener noreferrer nofollow">single dispatch</a> (и будет прав).</p>
