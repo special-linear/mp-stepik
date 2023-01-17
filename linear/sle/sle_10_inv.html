@@ -1,0 +1,19 @@
+<p>Системы линейных уравнений с одинаковыми матрицами можно решать одновременно. А именно, если есть СЛУ с расширенной матрицей <span class="math-tex">\((A \mid b_1)\)</span> и СЛУ с расширенной матрицей <span class="math-tex">\((A \mid b_2)\)</span>, то поскольку последовательность действий, влияющих на получение ответа, зависит только от матрицы <span class="math-tex">\(A\)</span>, можно преобразовывать к приведенной строчной эшелонированной форме сразу матрицу <span class="math-tex">\((A \mid b_1 \mid b_2)\)</span>.</p>
+
+<p>Поскольку произведение матрицы <span class="math-tex">\(C\)</span> и матрицы, составленной из столбцов <span class="math-tex">\(b_1, b_2, \ldots, b_s\)</span>, можно проделывать на уровне столбцов:<span class="math-tex">\[C \cdot (b_1 \mid b_2 \mid \ldots \mid b_s) = (Cb_1 \mid Cb_2 \mid \ldots \mid Cb_s),\]</span>можно набор СЛУ <span class="math-tex">\(Ax_1 = b_1,\ Ax_2 = b_2,\ \ldots,\ Ax_s=b_s\)</span> трактовать как матричное уравнение <span class="math-tex">\(AX = B\)</span>, где <span class="math-tex">\(X = (x_1 \mid x_2 \mid \ldots \mid x_s)\)</span> и <span class="math-tex">\(B = (b_1 \mid b_2 \mid \ldots \mid b_s)\)</span>. В частности, если <span class="math-tex">\(A \in \operatorname{M}_{n\times n}(F)\)</span> и <span class="math-tex">\(B = I_n\)</span> (единичная матрица размера <span class="math-tex">\(n\)</span>), то такое уравнение задает матрицу <span class="math-tex">\(A^{-1}\)</span>, обратную к <span class="math-tex">\(A\)</span> (строго говоря, правую обратную, но для матриц над коммутативным кольцом это одно и то же).</p>
+
+<p>Если матрица&nbsp;<span class="math-tex">\(A\)</span> обратима, то задача нахождения обратной сводится к нахождению приведенной строчной эшелонированной формы матрицы <span class="math-tex">\((A \mid I_n)\)</span> &mdash; как она выглядит? Обратимость можно установить уже по расположению последнего ведущего элемента.</p>
+
+<p><strong>Задача.</strong> Реализовать метод обращения квадратной матрицы (обычно именуемый <code>inv</code>). На вход подается обратимая матрица <span class="math-tex">\(A\)</span> с целыми элементами, на выходе обратная матрица <span class="math-tex">\(A^{-1}\)</span>.</p>
+
+<p><strong>Совет.</strong> Для этой и многих других задач полезно завести в классе <code>Matrix</code> статический метод <code>hstack</code>, возвращающий по последовательности матриц одинаковой высоты <span class="math-tex">\(A_1, \ldots, A_s\)</span> матрицу <span class="math-tex">\((A_1 \mid \ldots \mid A_s)\)</span>. Например, в коде</p>
+
+<pre>
+<code class="language-python">@staticmethod
+def hstack(*matrices):
+    pass</code></pre>
+
+<p>в теле метода переменная <code>matrices</code> типа <code>tuple</code> содержит передаваемые в качестве аргументов матрицы. Вызывать метод можно, например, так:</p>
+
+<pre>
+<code class="language-python">Matrix.hstack(a1, a2, a3)</code></pre>

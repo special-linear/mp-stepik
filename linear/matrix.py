@@ -110,6 +110,10 @@ class Matrix:
         else:
             raise IndexError('Матрицы имеют различные высоты.')
 
+    @staticmethod
+    def identity(n):
+        return Matrix(((int(i == j) for j in range(n)) for i in range(n)))
+
     def transpose(self):
         return Matrix(zip(*self.entries))
 
@@ -178,6 +182,18 @@ class Matrix:
         else:
             raise IndexError('Размеры матриц несовместимы для умножения: {}x{} и {}x{}.'.format(m1, n1, m2, n2))
 
+    def inv(self):
+        m, n = self.shape()
+        if m == n:
+            ai = Matrix.hstack(self, Matrix.identity(m))
+            rref, pivots = ai.ref(reduced=True, output_pivots=True)
+            if pivots[-1] == m - 1:
+                return rref[:, n:]
+            else:
+                raise ValueError('Матрица необратима.')
+        else:
+            raise IndexError('Неквадратная матрица.')
+
     def det(self):
         m, n = self.shape()
         if m == n:
@@ -206,6 +222,13 @@ def randmat(m, n, entries_lim=3):
 def random_glnq(n, entries_lim=3):
     a = Matrix([[0]])
     while a.det() == 0:
+        a = Matrix(randmat(n, n, entries_lim=entries_lim))
+    return a
+
+
+def random_glnq_small_det(n, entries_lim=3, det_lim=5):
+    a = Matrix([[0]])
+    while not(0 < abs(a.det()) <= det_lim):
         a = Matrix(randmat(n, n, entries_lim=entries_lim))
     return a
 
