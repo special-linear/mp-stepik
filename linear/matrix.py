@@ -14,7 +14,7 @@ class Matrix:
         if issubclass(entries_type, int):
             converter = Fraction
         elif issubclass(entries_type, tuple):
-            converter = lambda x: Fraction(*x)
+            def converter(x): Fraction(*x)
         self.entries = [list(map(converter, row)) for row in entries]
 
     def __getitem__(self, item):
