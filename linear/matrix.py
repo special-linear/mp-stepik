@@ -215,6 +215,23 @@ def linear_solve(mat: Matrix):
     return Matrix(zip(*[x]))
 
 
+def kernel_basis(mat: Matrix, output_pivots=False):
+    m, n = mat.shape()
+    rref, pivots = mat.ref(reduced=True, output_pivots=True)
+    pivots_set = set(pivots)
+    entries = []
+    for j in range(n):
+        if j not in pivots_set:
+            col = [0] * n
+            col[j] = 1
+            for i, p in enumerate(pivots):
+                if p < j:
+                    col[p] = -rref[i, j]
+            entries.append(col)
+    basis = Matrix(zip(*entries))
+    return (basis, pivots) if output_pivots else basis
+
+
 def randmat(m, n, entries_lim=3):
     return [random.choices(range(-entries_lim, entries_lim + 1), k=n) for _ in range(m)]
 
