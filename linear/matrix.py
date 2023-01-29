@@ -1,5 +1,5 @@
 from fractions import Fraction
-from math import inf, gcd
+from math import inf, gcd, lcm
 import itertools as it
 import more_itertools as mit
 from functools import reduce
@@ -41,11 +41,20 @@ class Matrix:
         else:
             raise IndexError('Некорректный индекс.')
 
+    def cols(self):
+        return (self[:, j] for j in range(self.shape()[1]))
+
+    def rows(self):
+        return (self[i, :] for i in range(self.shape()[0]))
+
     def shape(self):
         return len(self.entries), len(self.entries[0])
 
     def __eq__(self, other):
         return self.entries == other.entries
+
+    def __bool__(self):
+        return any(any(row) for row in self.entries)
 
     def __str__(self):
         entries_strs = [list(map(str, row)) for row in self.entries]
@@ -239,8 +248,14 @@ def kernel_basis(mat: Matrix, output_pivots=False):
             for i, p in enumerate(pivots):
                 if p < j:
                     col[p] = -rref[i, j]
+            denom_common = lcm(*[x.denominator for x in col])
+            col = [x * denom_common for x in col]
+            numer_gcd = gcd(*[x.numerator for x in col])
+            col = [x / numer_gcd for x in col]
             entries.append(col)
-    basis = Matrix(zip(*entries))
+    basis = Matrix.zeros(n, 1)
+    if entries:
+        basis = Matrix(zip(*entries))
     return (basis, pivots) if output_pivots else basis
 
 
