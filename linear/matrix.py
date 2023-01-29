@@ -111,8 +111,20 @@ class Matrix:
             raise IndexError('Матрицы имеют различные высоты.')
 
     @staticmethod
+    def vstack(*matrices):
+        entries = list(m.entries for m in matrices)
+        if mit.all_equal(m.shape()[1] for m in matrices):
+            return Matrix(it.chain.from_iterable(entries))
+        else:
+            raise IndexError('Матрицы имеют различные ширины.')
+
+    @staticmethod
     def identity(n):
         return Matrix(((int(i == j) for j in range(n)) for i in range(n)))
+
+    @staticmethod
+    def zeros(m, n):
+        return Matrix([[0] * n] * m)
 
     def transpose(self):
         return Matrix(zip(*self.entries))
