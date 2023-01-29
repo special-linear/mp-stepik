@@ -14,7 +14,7 @@ class Matrix:
         if issubclass(entries_type, int):
             converter = Fraction
         elif issubclass(entries_type, tuple):
-            def converter(x): Fraction(*x)
+            def converter(x): return Fraction(*x)
         self.entries = [list(map(converter, row)) for row in entries]
 
     def __getitem__(self, item):
@@ -233,7 +233,7 @@ def random_glnq_small_det(n, entries_lim=3, det_lim=5):
     return a
 
 
-def random_rref(m, n, pivots_num, entries_lim=3):
+def random_rref(m, n, pivots_num, entries_lim=3, output_pivots=False):
     pivots = [0] + list(sorted(random.sample(range(1, n), k=pivots_num - 1)))
     pivots_set = set(pivots)
     entries = [[0] * n for _ in range(m)]
@@ -243,4 +243,5 @@ def random_rref(m, n, pivots_num, entries_lim=3):
             for j in range(pivots[i] + 1, n):
                 if j not in pivots_set:
                     entries[i][j] = random.choice((1, -1)) * random.randint(1, entries_lim)
-    return Matrix(entries)
+    a = Matrix(entries)
+    return (a, pivots) if output_pivots else a
