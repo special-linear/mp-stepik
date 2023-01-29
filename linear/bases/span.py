@@ -46,14 +46,5 @@ def check(reply, clue):
 def solve(dataset):
     entries = (map(int, row.split()) for row in dataset.splitlines())
     a = Matrix(entries)
-    print(a)
     pivots = a.ref(output_pivots=True)[1]
     return ' '.join(map(str, pivots))
-
-
-for dataset, clue in generate():
-
-    sol = solve(dataset)
-    print(check(sol, clue))
-
-# print(check('1 2 3 a b c \n   d\n \n\n\n sf dgd', 0))
