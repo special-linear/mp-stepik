@@ -14,22 +14,30 @@ class Matrix:
         if issubclass(entries_type, int):
             converter = Fraction
         elif issubclass(entries_type, tuple):
-            def converter(x): return Fraction(*x)
+            def converter(x):
+                return Fraction(*x)
         self.entries = [list(map(converter, row)) for row in entries]
 
     def __getitem__(self, item):
         m, n = self.shape()
-        if isinstance(item, (int, slice)):
+        if isinstance(item, int):
             if m == 1:
                 return self.entries[0][item]
             elif n == 1:
                 return self.entries[item][0]
             else:
                 raise IndexError('Один индекс не для столбца или строки.')
+        elif isinstance(item, slice):
+            if m == 1:
+                return Matrix([self.entries[0][item]])
+            elif n == 1:
+                return Matrix(self.entries[item])
+            else:
+                raise IndexError('Один индекс не для столбца или строки.')
         elif isinstance(item, tuple) and len(item) == 2:
             i1, i2 = item
             if all(isinstance(i, int) for i in item):
-                return self.entries[item[0]][item[1]]
+                return self.entries[i1][i2]
             elif isinstance(i1, int) and isinstance(i2, slice):
                 return Matrix([self.entries[i1][i2]])
             elif isinstance(i1, slice) and isinstance(i2, int):
@@ -39,6 +47,40 @@ class Matrix:
             else:
                 raise IndexError('Некорректный индекс.')
         else:
+            raise IndexError('Некорректный индекс.')
+
+    def __setitem__(self, key, value):
+        m, n = self.shape()
+        if isinstance(key, int):
+            if m == 1:
+                self.entries[0][key] = value
+            elif n == 1:
+                self.entries[key][0] = value
+            else:
+                raise IndexError('Один индекс не для столбца или строки.')
+        elif isinstance(key, slice):
+            if m == 1:
+                self[0, key] = value
+            elif n == 1:
+                self[key, 0] = value
+            else:
+                raise IndexError('Один индекс не для столбца или строки.')
+        elif isinstance(key, tuple) and len(key) == 2:
+            i1, i2 = key
+            if all(isinstance(i, int) for i in key):
+                self.entries[i1][i2] = value
+            elif isinstance(i1, int) and isinstance(i2, slice):
+                self.entries[i1][i2] = value.entries[0]
+            elif isinstance(i1, slice) and isinstance(i2, int):
+                for i, row in enumerate(self.entries[i1]):
+                    row[i2] = value[i, 0]
+            elif isinstance(i1, slice) and isinstance(i2, slice):
+                for row_self, row_val in zip(self.entries[i1], value.entries):
+                    row_self[i2] = row_val
+            else:
+                raise IndexError('Некорректный индекс.')
+        else:
+
             raise IndexError('Некорректный индекс.')
 
     def cols(self):
@@ -150,6 +192,21 @@ class Matrix:
         self.entries[i] = [a + x * b for a, b in zip(self.entries[i], self.entries[j])]
         return self
 
+    def col_mult(self, i, x):
+        for row in self.entries:
+            row[i] *= x
+        return self
+
+    def col_swap(self, i, j):
+        for row in self.entries:
+            row[i], row[j] = row[j], row[i]
+        return self
+
+    def col_add(self, i, j, x):
+        for row in self.entries:
+            row[i] += x * row[j]
+        return self
+
     def ref(self, reduced=False, output_pivots=False):
         a = Matrix(self.entries)
         m = len(a.entries)
@@ -259,6 +316,74 @@ def kernel_basis(mat: Matrix, output_pivots=False):
     return (basis, pivots) if output_pivots else basis
 
 
+def integer_linear_solve(ab: Matrix):
+    a = ab[:, :-1]
+    b = ab[:, -1]
+    m, n = a.shape()
+    c2 = Matrix.identity(n)
+    jt = -1
+    for t in range(m):
+        # choose a pivot
+        for j in range(jt + 1, n):
+            new_jt_found = False
+            for k in range(t, m):
+                if a[k, j] != 0:
+                    jt = j
+                    if k != t:
+                        a.row_swap(t, k)
+                        b.row_swap(t, k)
+                    if jt != t:
+                        a.col_swap(t, jt)
+                        c2.col_swap(t, jt)
+                        jt = t
+                    new_jt_found = True
+                    break
+            if new_jt_found:
+                break
+        else:
+            break
+        # improve the pivot and eliminate entries
+        steps = 0
+        while (any(a.entries[t][t + 1:]) or any(row[jt] for row in a.entries[t + 1:])) and steps <= 3:
+            steps += 1
+            # improvint the column
+            for k in range(t + 1, m):
+                at, ak = a[t, jt], a[k, jt]
+                if ak:
+                    d, x, y = extgcd(at, ak)
+                    bez = Matrix([[x, y], [-ak // d, at // d]])
+                    bez_slice = slice(t, k + 1, k - t)
+                    a[bez_slice, :] = bez @ a[bez_slice, :]
+                    b[bez_slice] = bez @ b[bez_slice]
+            # improving the column
+            for j in range(jt + 1, n):
+                at, aj = a[t, jt], a[t, j]
+                if aj:
+                    d, x, y = extgcd(at, aj)
+                    bez = Matrix([[x, -aj // d], [y, at // d]])
+                    bez_slice = slice(jt, j + 1, j - jt)
+                    a[:, bez_slice] = a[:, bez_slice] @ bez
+                    c2[:, bez_slice] = c2[:, bez_slice] @ bez
+    a_diag = list(map(int, (a[i, i] for i in range(min(m, n)))))
+    a_diag_extended = list(mit.padded(a_diag, 0, m))
+    b_list = [int(b[i]) for i in range(m)]
+    if all(di == 0 and bi == 0 or di != 0 and bi % di == 0 for di, bi in zip(a_diag_extended, b_list)):
+        sol_first_entries = [[bi // di if di else 0] for di, bi in zip(a_diag, b_list)]
+        return c2 @ Matrix(list(mit.padded(sol_first_entries, [0], n)))
+    else:
+        return None
+
+
+def extgcd(a: int, b: int):
+    """return (g, x, y) such that a*x + b*y = g = gcd(a, b)"""
+    x0, x1, y0, y1 = 0, 1, 1, 0
+    while a != 0:
+        (q, a), b = divmod(b, a), a
+        y0, y1 = y1, y0 - q * y1
+        x0, x1 = x1, x0 - q * x1
+    return b, x0, y0
+
+
 def randmat(m, n, entries_lim=3):
     return [random.choices(range(-entries_lim, entries_lim + 1), k=n) for _ in range(m)]
 
@@ -272,8 +397,20 @@ def random_glnq(n, entries_lim=3):
 
 def random_glnq_small_det(n, entries_lim=3, det_lim=5):
     a = Matrix([[0]])
-    while not(0 < abs(a.det()) <= det_lim):
+    while not (0 < abs(a.det()) <= det_lim):
         a = Matrix(randmat(n, n, entries_lim=entries_lim))
+    return a
+
+
+def random_glnz(n):
+    a = Matrix.identity(n)
+    for i in range(8):
+        c = Matrix([
+            [random.choice((1, -1)) if i == j else random.randint(-1, 1) if i < j else 0 for j in range(n)]
+            for i in range(n)])
+        if i % 2:
+            c = c.transpose()
+        a = c @ a
     return a
 
 
@@ -289,3 +426,4 @@ def random_rref(m, n, pivots_num, entries_lim=3, output_pivots=False):
                     entries[i][j] = random.choice((1, -1)) * random.randint(1, entries_lim)
     a = Matrix(entries)
     return (a, pivots) if output_pivots else a
+
