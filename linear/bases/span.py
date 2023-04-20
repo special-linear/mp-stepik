@@ -1,10 +1,6 @@
 from linear.matrix import Matrix, random_rref, random_glnq
 
 
-# the input is a matrix, the problem is to pick a maximal linearly independent subset of columns
-# output is the list of numbers of columns (numbering from 0)
-
-
 def generate():
     matrices_handcrafted = [
         [[1, 2, 3], [4, 5, 0], [6, 0, 0]],
