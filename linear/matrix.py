@@ -1,5 +1,5 @@
 from fractions import Fraction
-from math import inf, gcd, lcm
+from math import inf, gcd
 import itertools as it
 import more_itertools as mit
 from functools import reduce
@@ -80,7 +80,6 @@ class Matrix:
             else:
                 raise IndexError('Некорректный индекс.')
         else:
-
             raise IndexError('Некорректный индекс.')
 
     def cols(self):
@@ -293,6 +292,15 @@ def linear_solve(mat: Matrix):
     return Matrix(zip(*[x]))
 
 
+def lcm(*numbers):
+    a = list(numbers)
+    while len(a) > 1:
+        last = a.pop()
+        prev = a[-1]
+        a[-1] = last * prev // gcd(last, prev)
+    return a[0]
+
+
 def kernel_basis(mat: Matrix, output_pivots=False):
     m, n = mat.shape()
     rref, pivots = mat.ref(reduced=True, output_pivots=True)
@@ -307,10 +315,10 @@ def kernel_basis(mat: Matrix, output_pivots=False):
                     col[p] = -rref[i, j]
             denom_common = lcm(*[x.denominator for x in col])
             col = [x * denom_common for x in col]
-            numer_gcd = gcd(*[x.numerator for x in col])
-            col = [x / numer_gcd for x in col]
+            numer_gcd = reduce(gcd, [x.numerator for x in col])
+            col = [x // numer_gcd for x in col]
             entries.append(col)
-    basis = Matrix.zeros(n, 1)
+    basis = None
     if entries:
         basis = Matrix(zip(*entries))
     return (basis, pivots) if output_pivots else basis
@@ -426,4 +434,3 @@ def random_rref(m, n, pivots_num, entries_lim=3, output_pivots=False):
                     entries[i][j] = random.choice((1, -1)) * random.randint(1, entries_lim)
     a = Matrix(entries)
     return (a, pivots) if output_pivots else a
-
